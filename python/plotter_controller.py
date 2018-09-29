@@ -13,6 +13,9 @@ class PlotterStep:
 	def __str__(self):
 		return "Step: " + str(self.x_step) + ", " + str(self.y_step)
 
+	def __eq__(self, other):
+		return self.x_step == other.x_step and self.y_step == other.y_step
+
 class PlotterController:
 	#default initialization with a data provider and a step_time
 	def __init__(self, step_data, step_time=0.001):
