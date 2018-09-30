@@ -35,7 +35,7 @@ void setup()
   pinMode(stepper2Step,OUTPUT);
 
   //This is a timer used to interrupt to do the step function of the stepper motors.
-  Timer1.initialize(400);
+  Timer1.initialize(200);
   Timer1.attachInterrupt(stepTime);
 }
 
@@ -62,47 +62,88 @@ bool swapBuffers()
   return 1;
 }
 
+int phase = 0;
+
 //Step the steppers
 void stepTime()
 {
   uint8_t nextStepData = readBuffer[readPos];
-
-  if(readPos < BUFFER_SIZE)
-  {
-    readPos++;
-  }
-  //The buffer is full. Try to swap buffers
-  else
-  {
-    if(swapBuffers())
-    {
-      return;
-    }
-  }
-  
-  //The data from serial directly sets the values of the dir and step pins
-  //The table shows the connections of the data sent from serial
-  //bit    |     3    |     2     |     1    |     0     |
-  //       |step 1 dir|step 1 step|step 2 dir|step 2 step|
-  uint8_t step1Data = nextStepData & 0xC;
-  uint8_t step2Data = nextStepData & 0x3;
 
   uint8_t stepBit1 = (nextStepData & 0x4) >> 2;
   uint8_t dirBit1  = (nextStepData & 0x8) >> 3;
   uint8_t stepBit2 = (nextStepData & 0x1) >> 0;
   uint8_t dirBit2  = (nextStepData & 0x2) >> 1;
 
-  PORTB ^= (-stepBit1 ^ PORTB) & (1 << PB2);
-  PORTB ^= (-dirBit1  ^ PORTB) & (1 << PB3);
-  PORTB ^= (-stepBit2 ^ PORTB) & (1 << PB1);
-  PORTD ^= (-dirBit2  ^ PORTD) & (1 << PD3);
-
-  uint8_t pumpVel = nextStepData & 0xF0;
-  if(pumpVel != lastPumpVel)
+  if(phase == 0)
   {
-    pump.run(pumpVel);
-    lastPumpVel = pumpVel;
+    if(readPos < BUFFER_SIZE)
+    {
+      readPos++;
+    }
+    //The buffer is consumed. Try to swap buffers
+    else
+    {
+      if(swapBuffers())
+      {
+        return;
+      }
+    }
+    
+    //Set direction
+    PORTB ^= (-dirBit1  ^ PORTB) & (1 << PB3);
+    PORTD ^= (-dirBit2  ^ PORTD) & (1 << PD3);
+
+    //Do the stepping
+    PORTB ^= (-stepBit1 ^ PORTB) & (1 << PB2);
+    PORTB ^= (-stepBit2 ^ PORTB) & (1 << PB1);
+    
+    uint8_t pumpVel = nextStepData & 0xF0;
+    if(pumpVel != lastPumpVel)
+    {
+      pump.run(pumpVel);
+      lastPumpVel = pumpVel;
+    }
+    phase = 1;
   }
+  else
+  {
+    //Clear step
+    PORTB &= (1 << PB2);
+    PORTB &= (1 << PB1);
+    
+    phase = 0;
+  }
+  
+  //The data from serial directly sets the values of the dir and step pins
+  //The table shows the connections of the data sent from serial
+  //bit    |     3    |     2     |     1    |     0     |
+  //       |step 1 dir|step 1 step|step 2 dir|step 2 step|
+  //uint8_t step1Data = nextStepData & 0xC;
+  //uint8_t step2Data = nextStepData & 0x3;
+
+  //uint8_t stepBit1 = (nextStepData & 0x4) >> 2;
+  //uint8_t dirBit1  = (nextStepData & 0x8) >> 3;
+  //uint8_t stepBit2 = (nextStepData & 0x1) >> 0;
+  //uint8_t dirBit2  = (nextStepData & 0x2) >> 1;
+  
+  //uint8_t step_b_set = (stepBit1 << PB2) || (stepBit2 << PB1);
+  //uint8_t step_b_clear = ~((1 << PB2) | (1 << PB1));
+
+  //Set directional bits
+  //PORTB ^= (-dirBit1  ^ PORTB) & (1 << PB3);
+  //PORTD ^= (-dirBit2  ^ PORTD) & (1 << PD3);
+ 
+  //PORTB &= step_b_clear;
+  //PORTB |= step_b_set;
+
+  //This goes first because it should set direction before step
+  //PORTD |= (dirBit2 << PD3);
+  //PORTB |= (stepBit1 << PB2) | (0 << PB3) | (stepBit2 << PB1);
+  
+  //PORTB ^= (-stepBit1 ^ PORTB) & (1 << PB2);
+  //PORTB ^= (-dirBit1  ^ PORTB) & (1 << PB3);
+  //PORTB ^= (-stepBit2 ^ PORTB) & (1 << PB1);
+  //PORTD ^= (-dirBit2  ^ PORTD) & (1 << PD3);
 }
 
 void loop()

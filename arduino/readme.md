@@ -19,7 +19,7 @@ The arduino will be reffered to as the "device" and the computer connected to it
 The arduino is the unit that will controll the dataflow.
 At startup, the device starts a serial communication with a baud rate of 57600. 
 This baud rate must be matched by server. 
-Every time the device is ready to receive data, it will send "Ready\n" on the serial interface.
+Every time the device is ready to receive data, it will send "Ready\r\n" (in ascii) on the serial interface.
 Now the server can send data, but doesn't have to and can wait for the next "Ready" message.
 The server message is a 512 bytearray representing the steps. Format is explained in next section.
 The server will wait for the next "Ready" message before it sends the next 512 bytes etc.
