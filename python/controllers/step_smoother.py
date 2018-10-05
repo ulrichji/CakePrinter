@@ -83,7 +83,8 @@ class SmoothedStepDataProvider(plotter_controller.StepDataProvider):
 		
 		self.simulator.clearStats()
 		self.simulator.step(step)
-		print(self.simulator.current_phys_time, self.current_data, step, self.simulator.getStats()['max_force_x_abs'], self.simulator.getStats()['max_force_y_abs'])
+		print("%.6f"%(self.simulator.current_phys_time), self.current_data, end="\r")
+		#print("%.5f"%(self.simulator.current_phys_time), self.current_data, step, self.simulator.getStats()['max_force_x_abs'], self.simulator.getStats()['max_force_y_abs'])
 		if(not step_changed):
 			self.step_buffer.pop(0)
 			self.current_data += 1
@@ -108,8 +109,8 @@ def stepToText(step):
 	return '(' + str(x_text) + ',' + str(y_text) + ')'
 
 def main():
-	smoothed_step_file = open("stepfile_smooth.txt", "w")
-	file_data_provider = step_file_data_provider.StepFileDataProvider("stepfile.txt")
+	smoothed_step_file = open("test_stepfile_smooth.txt", "w")
+	file_data_provider = step_file_data_provider.StepFileDataProvider("test_stepfile.txt")
 	smoothed_data_provider = SmoothedStepDataProvider(file_data_provider)
 	while(smoothed_data_provider.hasData()):
 		step = smoothed_data_provider.getStep()

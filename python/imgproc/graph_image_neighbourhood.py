@@ -6,6 +6,7 @@ import image_simple_grayscaler
 import image_canny_binarizer
 
 import numpy as np
+import math
 
 class NodeIndexData(graph_provider.NodeData):
 	def __init__(self, x, y):
@@ -34,28 +35,28 @@ class GraphImageNeighbourhood(graph_provider.GraphProvider):
 		
 		other = self.getNeighbourIfNode(node, (y - 1, x - 1), node_image, image_shape)
 		if(not other is None):
-			neighbours.append(other)
+			neighbours.append(graph_provider.Edge(node, other, math.sqrt(2.0)))
 		other = self.getNeighbourIfNode(node, (y - 1, x), node_image, image_shape)
 		if(not other is None):
-			neighbours.append(other)
+			neighbours.append(graph_provider.Edge(node, other, 1))
 		other = self.getNeighbourIfNode(node, (y - 1, x + 1), node_image, image_shape)
 		if(not other is None):
-			neighbours.append(other)
+			neighbours.append(graph_provider.Edge(node, other, math.sqrt(2.0)))
 		other = self.getNeighbourIfNode(node, (y, x - 1), node_image, image_shape)
 		if(not other is None):
-			neighbours.append(other)
+			neighbours.append(graph_provider.Edge(node, other, 1))
 		other = self.getNeighbourIfNode(node, (y, x + 1), node_image, image_shape)
 		if(not other is None):
-			neighbours.append(other)
+			neighbours.append(graph_provider.Edge(node, other, 1))
 		other = self.getNeighbourIfNode(node, (y + 1, x - 1), node_image, image_shape)
 		if(not other is None):
-			neighbours.append(other)
+			neighbours.append(graph_provider.Edge(node, other, math.sqrt(2.0)))
 		other = self.getNeighbourIfNode(node, (y + 1, x), node_image, image_shape)
 		if(not other is None):
-			neighbours.append(other)
+			neighbours.append(graph_provider.Edge(node, other, 1))
 		other = self.getNeighbourIfNode(node, (y + 1, x + 1), node_image, image_shape)
 		if(not other is None):
-			neighbours.append(other)
+			neighbours.append(graph_provider.Edge(node, other, math.sqrt(2.0)))
 		
 		return neighbours
 	
@@ -68,6 +69,7 @@ class GraphImageNeighbourhood(graph_provider.GraphProvider):
 		for pixel_pos in possible_pixels:
 			node = graph_provider.Node()
 			node_image[pixel_pos[0]][pixel_pos[1]] = node
+			node.data = NodeIndexData(pixel_pos[1], pixel_pos[0])
 		
 		for pixel_pos in possible_pixels:
 			neighbours = self.getNeighbours(pixel_pos, node_image, provided_image.shape)
