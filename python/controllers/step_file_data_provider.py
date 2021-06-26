@@ -22,6 +22,9 @@ class StepFileDataProvider(plotter_controller.StepDataProvider):
 		else:
 			return plotter_controller.StepDirection.NONE
 	
+	def textStepToDrawValue(self, text_step):
+		return float(text_step)
+	
 	def openFile(self):
 		self.step_file = open(self.file_path, "r")
 	
@@ -37,10 +40,13 @@ class StepFileDataProvider(plotter_controller.StepDataProvider):
 			step_split = step_text.split(',')
 			x_step = self.textStepToStepData(step_split[0])
 			y_step = self.textStepToStepData(step_split[1])
+			draw_value = 0
+			if(len(step_split) > 2):
+				draw_value = self.textStepToDrawValue(step_split[2])
 			
 			self.buffer = self.buffer[step_end+1:]
 			
-			return plotter_controller.PlotterStep(x_step, y_step)
+			return plotter_controller.PlotterStep(x_step, y_step, draw_value=draw_value)
 		else:
 			return None
 	

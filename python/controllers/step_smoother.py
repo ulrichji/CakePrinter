@@ -31,18 +31,19 @@ class SmoothedStepDataProvider(plotter_controller.StepDataProvider):
 		self.simulator.step(step)
 		stats = self.simulator.getStats()
 		self.simulator.popState()
-		if(step.x_step == plotter_controller.StepDirection.FORWARD and stats['max_force_x'] > 1.0):
+		pump_velocity = min(step.draw_value, self.simulator.getVelocity() / 1.0)
+		if(step.x_step == plotter_controller.StepDirection.FORWARD and (stats['max_force_x'] > 1.0 or stats['max_velocity_x'] > 1.0)):
 			step_changed = True
-			step = plotter_controller.PlotterStep(plotter_controller.StepDirection.NONE, plotter_controller.StepDirection.NONE)
-		elif(step.x_step == plotter_controller.StepDirection.BACKWARDS and stats['min_force_x'] < -1.0):
+			step = plotter_controller.PlotterStep(plotter_controller.StepDirection.NONE, plotter_controller.StepDirection.NONE, pump_velocity)
+		elif(step.x_step == plotter_controller.StepDirection.BACKWARDS and (stats['min_force_x'] < -1.0 or stats['min_velocity_x'] < -1.0)):
 			step_changed = True
-			step = plotter_controller.PlotterStep(plotter_controller.StepDirection.NONE, plotter_controller.StepDirection.NONE)
-		elif(step.y_step == plotter_controller.StepDirection.FORWARD and stats['max_force_y'] > 1.0):
+			step = plotter_controller.PlotterStep(plotter_controller.StepDirection.NONE, plotter_controller.StepDirection.NONE, pump_velocity)
+		elif(step.y_step == plotter_controller.StepDirection.FORWARD and (stats['max_force_y'] > 1.0 or stats['max_velocity_x'] > 1.0)):
 			step_changed = True
-			step = plotter_controller.PlotterStep(plotter_controller.StepDirection.NONE, plotter_controller.StepDirection.NONE)
-		elif(step.y_step == plotter_controller.StepDirection.BACKWARDS and stats['min_force_y'] < -1.0):
+			step = plotter_controller.PlotterStep(plotter_controller.StepDirection.NONE, plotter_controller.StepDirection.NONE, pump_velocity)
+		elif(step.y_step == plotter_controller.StepDirection.BACKWARDS and (stats['min_force_y'] < -1.0 or stats['min_velocity_x'] < -1.0)):
 			step_changed = True
-			step = plotter_controller.PlotterStep(plotter_controller.StepDirection.NONE, plotter_controller.StepDirection.NONE)
+			step = plotter_controller.PlotterStep(plotter_controller.StepDirection.NONE, plotter_controller.StepDirection.NONE, pump_velocity)
 		
 		#Now compare constraint breaking in the opposite direction
 		if(not step_changed):
@@ -51,7 +52,7 @@ class SmoothedStepDataProvider(plotter_controller.StepDataProvider):
 			y_sim_time = self.simulator.y_mass * abs(velocity[1]) / 1.0
 			sim_time = max(x_sim_time, y_sim_time)
 			
-			number_of_steps = int(sim_time / self.simulator.step_time)
+			number_of_steps = int((0.5 * sim_time) / self.simulator.step_time)
 			self.fillBuffer(number_of_steps)
 			
 			#Now do the simulation
@@ -63,23 +64,23 @@ class SmoothedStepDataProvider(plotter_controller.StepDataProvider):
 				self.simulator.step(inloop_step)
 			#If unable to fill buffer, add more.
 			for i in range(max(number_of_steps - len(self.step_buffer), 0)):
-				self.simulator.step(plotter_controller.PlotterStep(plotter_controller.StepDirection.NONE, plotter_controller.StepDirection.NONE))
+				self.simulator.step(plotter_controller.PlotterStep(plotter_controller.StepDirection.NONE, plotter_controller.StepDirection.NONE, pump_velocity))
 			
 			stats = self.simulator.getStats()
 			self.simulator.popState()
 			
 			if(step.x_step == plotter_controller.StepDirection.FORWARD and stats['min_force_x'] < -1.0):
 				step_changed = True
-				step = plotter_controller.PlotterStep(plotter_controller.StepDirection.NONE, plotter_controller.StepDirection.NONE)
+				step = plotter_controller.PlotterStep(plotter_controller.StepDirection.NONE, plotter_controller.StepDirection.NONE, pump_velocity)
 			elif(step.x_step == plotter_controller.StepDirection.BACKWARDS and stats['max_force_x'] > 1.0):
 				step_changed = True
-				step = plotter_controller.PlotterStep(plotter_controller.StepDirection.NONE, plotter_controller.StepDirection.NONE)
+				step = plotter_controller.PlotterStep(plotter_controller.StepDirection.NONE, plotter_controller.StepDirection.NONE, pump_velocity)
 			elif(step.y_step == plotter_controller.StepDirection.FORWARD and stats['min_force_y'] < -1.0):
 				step_changed = True
-				step = plotter_controller.PlotterStep(plotter_controller.StepDirection.NONE, plotter_controller.StepDirection.NONE)
+				step = plotter_controller.PlotterStep(plotter_controller.StepDirection.NONE, plotter_controller.StepDirection.NONE, pump_velocity)
 			elif(step.y_step == plotter_controller.StepDirection.BACKWARDS and stats['max_force_y'] > 1.0):
 				step_changed = True
-				step = plotter_controller.PlotterStep(plotter_controller.StepDirection.NONE, plotter_controller.StepDirection.NONE)
+				step = plotter_controller.PlotterStep(plotter_controller.StepDirection.NONE, plotter_controller.StepDirection.NONE, pump_velocity)
 		
 		self.simulator.clearStats()
 		self.simulator.step(step)
@@ -97,6 +98,7 @@ class SmoothedStepDataProvider(plotter_controller.StepDataProvider):
 def stepToText(step):
 	x_text = '0'
 	y_text = '0'
+	draw_text = str(step.draw_value)
 	if(step.x_step == plotter_controller.StepDirection.FORWARD):
 		x_text = '1'
 	elif(step.x_step == plotter_controller.StepDirection.BACKWARDS):
@@ -106,11 +108,11 @@ def stepToText(step):
 	elif(step.y_step == plotter_controller.StepDirection.BACKWARDS):
 		y_text = '-1'
 	
-	return '(' + str(x_text) + ',' + str(y_text) + ')'
+	return '(' + str(x_text) + ',' + str(y_text) + ',' + str(draw_text) + ')'
 
 def main():
-	smoothed_step_file = open("test_stepfile_smooth.txt", "w")
-	file_data_provider = step_file_data_provider.StepFileDataProvider("test_stepfile.txt")
+	smoothed_step_file = open("zivid_stepfile_smooth.txt", "w")
+	file_data_provider = step_file_data_provider.StepFileDataProvider("zivid_stepfile.txt")
 	smoothed_data_provider = SmoothedStepDataProvider(file_data_provider)
 	while(smoothed_data_provider.hasData()):
 		step = smoothed_data_provider.getStep()

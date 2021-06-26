@@ -28,6 +28,7 @@ class RandomDataProvider(plotter_controller.StepDataProvider):
 	def getStep(self):
 		x_dir = random.choice(list(plotter_controller.StepDirection))
 		y_dir = random.choice(list(plotter_controller.StepDirection))
+		draw_value = 1
 		
 		self.delayData()
 		
@@ -36,7 +37,7 @@ class RandomDataProvider(plotter_controller.StepDataProvider):
 		
 		self.data_count += 1
 		self.n_data_left -= 1
-		self.last_step = plotter_controller.PlotterStep(x_dir, y_dir)
+		self.last_step = plotter_controller.PlotterStep(x_dir, y_dir, draw_value=draw_value)
 		self.interaction_list.append(self.last_step)
 		
 		return self.last_step

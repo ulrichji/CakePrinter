@@ -40,7 +40,7 @@ def optimizeTrajectory(positions, start_position=(0,0), end_position=(0,0)):
 		shortest_index = 0
 		for j in range(number_of_positions):
 			if(visited_positions[j] == False):
-				distance = math.sqrt(((positions[j][0][0] - current_position[0])**2) + ((positions[j][1][0] - current_position[1])**2))
+				distance = math.sqrt(((positions[j][0][0] - current_position[0])**2) + ((positions[j][0][1] - current_position[1])**2))
 				if(distance < shortest_distance):
 					shortest_distance = distance
 					shortest_index = j
@@ -66,6 +66,19 @@ def fillTrajectories(trajectories):
 		draw_trajectory = trajectories[indices]
 		start_pos = draw_trajectory[0]
 		nodraw_trajectory = line(current_pos[0], current_pos[1], start_pos[0], start_pos[1])
+		
+		diffs = [abs(nodraw_trajectory[i+1][0] - nodraw_trajectory[i][0]) for i in range(len(nodraw_trajectory)-1) if abs(nodraw_trajectory[i+1][0] - nodraw_trajectory[i][0]) > 1]
+		if(len(diffs) > 0):
+			print(diffs)
+		diffs = [abs(nodraw_trajectory[i+1][1] - nodraw_trajectory[i][1]) for i in range(len(nodraw_trajectory)-1) if abs(nodraw_trajectory[i+1][1] - nodraw_trajectory[i][1]) > 1]
+		if(len(diffs) > 0):
+			print(diffs)
+		diffs = [abs(draw_trajectory[i+1][0] - draw_trajectory[i][0]) for i in range(len(draw_trajectory)-1) if abs(draw_trajectory[i+1][0] - draw_trajectory[i][0]) > 1]
+		if(len(diffs) > 0):
+			print(diffs)
+		diffs = [abs(draw_trajectory[i+1][1] - draw_trajectory[i][1]) for i in range(len(draw_trajectory)-1) if abs(draw_trajectory[i+1][1] - draw_trajectory[i][1]) > 1]
+		if(len(diffs) > 0):
+			print(diffs)
 		
 		combined_trajectory.extend([(pos[0], pos[1], 0) for pos in nodraw_trajectory])
 		combined_trajectory.extend([(pos[0], pos[1], 1) for pos in draw_trajectory])
@@ -98,6 +111,9 @@ def getStepsFromPosTrajectory(pos_trajectory):
 		elif(y_diff < 0):
 			y_step = -1
 		
+		#if(abs(x_diff) > 1 or abs(y_diff) > 1):
+		#	print(x_diff, y_diff)
+		
 		step_trajectory.append((x_step, y_step, draw))
 
 	return step_trajectory
@@ -105,11 +121,15 @@ def getStepsFromPosTrajectory(pos_trajectory):
 def main():
 	pos_trajectories = []
 	
-	f = open("pos_trajectory.txt", "r")
+	f = open("zivid_pos_trajectory.txt", "r")
+	
+	prev_x = 0
+	prev_y = 0
 	
 	for line in f:
 		positions = []
-		
+		prev_x = None
+		prev_y = None
 		while(len(line) > 0):
 			pos_start = line.find("(")
 			pos_end = line.find(")", pos_start)
@@ -120,6 +140,12 @@ def main():
 				y = int(values[1])
 				line = line[pos_end+1:].strip()
 				
+				if(not prev_x is None and not prev_y is None and (abs(prev_x - x) > 1 or abs(prev_y - y) > 1)):
+					print(prev_x,prev_y,"->",x,y)
+				
+				prev_x = x
+				prev_y = y
+				
 				positions.append((x,y))
 			else:
 				line = ""
@@ -127,10 +153,16 @@ def main():
 		pos_trajectories.append(positions)
 	f.close()
 	
+	temp_trajectories = pos_trajectories
+	pos_trajectories = []
+	for trajectory in temp_trajectories:
+		if(len(trajectory) > 5):
+			pos_trajectories.append(trajectory)
+	
 	full_trajectory = fillTrajectories(pos_trajectories)
 	steps = getStepsFromPosTrajectory(full_trajectory)
 
-	test_stepfile = open("test_stepfile.txt", "w")
+	test_stepfile = open("zivid_stepfile.txt", "w")
 	
 	test_stepfile.write(','.join(["(" + str(step[0]) + "," + str(step[1]) + "," + str(step[2]) + ")" for step in steps]))
 	

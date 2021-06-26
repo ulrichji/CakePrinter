@@ -6,15 +6,16 @@ class StepDirection(Enum):
 	BACKWARDS = 2
 
 class PlotterStep:
-	def __init__(self, x_step, y_step):
+	def __init__(self, x_step, y_step, draw_value):
 		self.x_step = x_step
 		self.y_step = y_step
+		self.draw_value = draw_value
 	
 	def __str__(self):
-		return "Step: " + str(self.x_step) + ", " + str(self.y_step)
+		return "[[Step: " + str(self.x_step) + ", " + str(self.y_step) + "], [Draw: " + str(self.draw_value) + "]"
 
 	def __eq__(self, other):
-		return self.x_step == other.x_step and self.y_step == other.y_step
+		return self.x_step == other.x_step and self.y_step == other.y_step and self.draw_value == other.draw_value
 
 class PlotterController:
 	#default initialization with a data provider and a step_time

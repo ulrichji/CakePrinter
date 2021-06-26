@@ -30,6 +30,12 @@ def listSerialPorts():
             pass
     return result
 
+def linearizePump(pump_val):
+	if(pump_val > 0):
+		return (pump_val * 0.25) + 0.25
+	else:
+		return 0
+
 def convertStepsToBinary(steps_list):
 	bytes = []
 	
@@ -39,10 +45,10 @@ def convertStepsToBinary(steps_list):
 	for step in steps_list:
 		x_dir_bit = 1 if step.x_step == plotter_controller.StepDirection.FORWARD else 0
 		x_step_bit = 1 if step.x_step != plotter_controller.StepDirection.NONE else 0
-		y_dir_bit = 1 if step.y_step == plotter_controller.StepDirection.FORWARD else 0
+		y_dir_bit = 0 if step.y_step == plotter_controller.StepDirection.FORWARD else 1
 		y_step_bit = 1 if step.y_step != plotter_controller.StepDirection.NONE else 0
 		
-		pump_val = 0
+		pump_val = linearizePump(step.draw_value)
 		pump_velocity = int(pump_val * 255)
 		
 		byteval = 0
@@ -89,7 +95,6 @@ class ArduinoController:
 			if(line == "Ready"):
 				print("Sending bytes %d to %d"%(data_count, data_count + len(self.send_buffer)))
 				ser.write(self.send_buffer)
-				print(self.send_buffer)
 				
 				data_count += len(self.send_buffer)
 				self.send_buffer.clear()

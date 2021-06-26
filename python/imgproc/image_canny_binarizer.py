@@ -23,12 +23,12 @@ class ImageCannyBinarizer(image_provider.ImageProvider):
 			L2gradient=self.l2gradient)
 
 def main():
-	file_image = image_file_loader.ImageFileLoader("examples/obama.jpg")
-	scale_image = image_scaler.ImageScaler(file_image, (4000,4000))
+	file_image = image_file_loader.ImageFileLoader("examples/zivid.png")
+	scale_image = image_scaler.ImageScaler(file_image, (6000,6000))
 	gray_image = image_simple_grayscaler.ImageSimpleGrayscaler(scale_image)
-	canny_image = ImageCannyBinarizer(gray_image, 100, 125, 3)
+	canny_image = ImageCannyBinarizer(gray_image, 100, 125, 5)
 	binarized_image = canny_image.getImage()
-	cv2.imwrite("examples/obama_canny.jpg", binarized_image)
+	cv2.imwrite("examples/zivid_canny.png", binarized_image)
 
 if __name__ == "__main__":
 	main()

@@ -7,6 +7,7 @@ import graph_to_sequence
 import graph_provider
 
 import numpy as np
+import scipy.sparse.csgraph as scipycsgraph
 
 class SequenceToTrajectory:
 	def __init__(self, sequence_provider):
@@ -17,38 +18,42 @@ class SequenceToTrajectory:
 			node.data.index = i
 	
 	def generateSectionDistanceMatrix(self, section):
-		distance_matrix = [[(float('inf'), None) for i in range(len(section))] for u in range(len(section))]
+		distance_matrix = np.full((len(section), len(section)), np.inf)
 		
 		for node in section:
-			distance_matrix[node.data.index][node.data.index] = (0, node.data.index)
+			distance_matrix[node.data.index][node.data.index] = 0
 			for edge in node.neighbours:
 				source_index = node.data.index
 				dest_index = edge.dest.data.index
 				edge_weight = edge.weight
 				
-				distance_matrix[source_index][dest_index] = (edge_weight, source_index)
+				distance_matrix[source_index][dest_index] = edge_weight
 		
 		return distance_matrix
 	
 	#Simple implementation of floyd warshall
 	def getShortestDistancePairs(self, distance_matrix):
-		n = len(distance_matrix) #The matix is square
-		for k in range(n):
-			for i in range(n):
-				for j in range(n):
-					if(distance_matrix[i][j][0] > distance_matrix[i][k][0] + distance_matrix[k][j][0]):
-						new_distance = distance_matrix[i][k][0] + distance_matrix[k][j][0]
-						new_predecessor = distance_matrix[k][j][1]
-						distance_matrix[i][j] = (new_distance, new_predecessor)
+		pure_distance_matrix = np.array(distance_matrix)
+		
+		return scipycsgraph.shortest_path(pure_distance_matrix, return_predecessors=True, method='D')
+		
+		#n = len(distance_matrix) #The matix is square
+		#for k in range(n):
+		#	for i in range(n):
+		#		for j in range(n):
+		#			if(distance_matrix[i][j][0] > distance_matrix[i][k][0] + distance_matrix[k][j][0]):
+		#				new_distance = distance_matrix[i][k][0] + distance_matrix[k][j][0]
+		#				new_predecessor = distance_matrix[k][j][1]
+		#				distance_matrix[i][j] = (new_distance, new_predecessor)
 	
-	def generateTrajectoryFromDistanceMatrix(self, distance_matrix):
+	def generateTrajectoryFromDistanceMatrix(self, distance_matrix, predecessors):
 		longest_span = 0
 		longest_span_pos = (0,0)
 		n = len(distance_matrix)
 		
 		for i in range(n):
 			for j in range(n):
-				dist = distance_matrix[i][j][0]
+				dist = distance_matrix[i][j]
 				if(dist > longest_span):
 					longest_span = dist
 					longest_span_pos = (i,j)
@@ -57,7 +62,7 @@ class SequenceToTrajectory:
 		current_index = longest_span_pos[1]
 		trajectory.append(current_index)
 		while(current_index != longest_span_pos[0]):
-			current_index = distance_matrix[longest_span_pos[0]][current_index][1]
+			current_index = predecessors[longest_span_pos[0]][current_index]
 			trajectory.append(current_index)
 		
 		return trajectory
@@ -69,11 +74,10 @@ class SequenceToTrajectory:
 		
 		for index in trajectory:
 			keep_index[index] = True
+			trajectory_nodes.append(section[index])
 		
 		for i in range(len(section)):
-			if(keep_index[i]):
-				trajectory_nodes.append(section[i])
-			else:
+			if(not keep_index[i]):
 				non_trajectory_nodes.append(section[i])
 		
 		return trajectory_nodes, non_trajectory_nodes
@@ -96,10 +100,11 @@ class SequenceToTrajectory:
 		print("Distance matrix")
 		distance_matrix = self.generateSectionDistanceMatrix(section)
 		print("Shortest distance")
-		self.getShortestDistancePairs(distance_matrix)
+		distance_matrix, predecessors = self.getShortestDistancePairs(distance_matrix)
 		
 		print("Trajectory")
-		trajectory = self.generateTrajectoryFromDistanceMatrix(distance_matrix)
+		trajectory = self.generateTrajectoryFromDistanceMatrix(distance_matrix, predecessors)
+		
 		print("Trajectory extraction")
 		trajectory_nodes, remaining_nodes = self.getTrajectoryNodes(trajectory, section)
 		print("Update edges")
@@ -143,8 +148,8 @@ def savePositions(file_path, positions_list):
 	f.close()
 
 def main():
-	file_image = image_file_loader.ImageFileLoader("examples/obama.jpg")
-	scale_image = image_scaler.ImageScaler(file_image, (4000,4000))
+	file_image = image_file_loader.ImageFileLoader("examples/zivid.png")
+	scale_image = image_scaler.ImageScaler(file_image, (4600,4600))
 	gray_image = image_simple_grayscaler.ImageSimpleGrayscaler(scale_image)
 	binarized_image = image_canny_binarizer.ImageCannyBinarizer(gray_image, 100, 125, 3)
 	
@@ -152,13 +157,13 @@ def main():
 	sections_data = graph_to_sequence.GraphToSequence(neighbourhood_graph)
 	trajectories_provider = SequenceToTrajectory(sections_data)
 	trajectories = trajectories_provider.getTrajectories()
-
+	
 	positions_list = []
 	for trajectory in trajectories:
 		positions = getPositionsFromTrajectory(trajectory)
 		positions_list.append(positions)
 	
-	savePositions("pos_trajectory.txt", positions_list)
+	savePositions("zivid_pos_trajectory.txt", positions_list)
 
 if __name__ == "__main__":
 	main()

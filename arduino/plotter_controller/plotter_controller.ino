@@ -35,7 +35,7 @@ void setup()
   pinMode(stepper2Step,OUTPUT);
 
   //This is a timer used to interrupt to do the step function of the stepper motors.
-  Timer1.initialize(200);
+  Timer1.initialize(400);
   Timer1.attachInterrupt(stepTime);
 }
 
