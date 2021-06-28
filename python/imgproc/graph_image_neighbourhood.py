@@ -86,8 +86,14 @@ class GraphImageNeighbourhood(graph_provider.GraphProvider):
 		return graph
 	
 
+import sys
 def main():
-	file_image = image_file_loader.ImageFileLoader("examples/obama.jpg")
+	if len(sys.argv) <= 1:
+		print('Usage: python {} <file to load>'.format(sys.argv[0]))
+		return
+
+	file_path = sys.argv[1]
+	file_image = image_file_loader.ImageFileLoader(file_path)
 	scale_image = image_scaler.ImageScaler(file_image, (4000,4000))
 	gray_image = image_simple_grayscaler.ImageSimpleGrayscaler(scale_image)
 	binarized_image = image_canny_binarizer.ImageCannyBinarizer(gray_image, 100, 125, 3)
@@ -95,6 +101,8 @@ def main():
 	neighbourhood_graph = GraphImageNeighbourhood(binarized_image)
 	
 	graph = neighbourhood_graph.getGraph()
+	
+	print('Created graph with {} nodes'.format(len(graph.node_list)))
 
 if __name__ == "__main__":
 	main()

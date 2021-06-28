@@ -22,13 +22,21 @@ class ImageCannyBinarizer(image_provider.ImageProvider):
 			apertureSize=self.aperture_size,
 			L2gradient=self.l2gradient)
 
+import sys
 def main():
-	file_image = image_file_loader.ImageFileLoader("examples/zivid.png")
+	if len(sys.argv) <= 2:
+		print('Usage: python {} <file to load> <file to write>'.format(sys.argv[0]))
+		return
+
+	file_path = sys.argv[1]
+	file_image = image_file_loader.ImageFileLoader(file_path)
 	scale_image = image_scaler.ImageScaler(file_image, (6000,6000))
 	gray_image = image_simple_grayscaler.ImageSimpleGrayscaler(scale_image)
-	canny_image = ImageCannyBinarizer(gray_image, 100, 125, 5)
+	canny_image = ImageCannyBinarizer(gray_image, 100, 200, 5)
 	binarized_image = canny_image.getImage()
-	cv2.imwrite("examples/zivid_canny.png", binarized_image)
+
+	output_path = sys.argv[2]
+	cv2.imwrite(output_path, binarized_image)
 
 if __name__ == "__main__":
 	main()

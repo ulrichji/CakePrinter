@@ -32,11 +32,19 @@ class ImageScaler(image_provider.ImageProvider):
 		scaled_image = cv2.resize(provider_image, (0,0), fx=scale_ratio, fy=scale_ratio)
 		return scaled_image
 
+import sys
 def main():
-	file_image = image_file_loader.ImageFileLoader("examples/obama.jpg")
+	if len(sys.argv) <= 2:
+		print('Usage: python {} <input image> <output image>'.format(sys.argv[0]))
+		return
+
+	input_path = sys.argv[1]
+	file_image = image_file_loader.ImageFileLoader(input_path)
 	scale_image = ImageScaler(file_image, (4000, 4000))
 	scaled_image = scale_image.getImage()
-	cv2.imwrite("examples/obama_scaled.jpg", cv2.cvtColor(scaled_image, cv2.COLOR_RGB2BGR))
+
+	output_path = sys.argv[2]
+	cv2.imwrite(output_path, cv2.cvtColor(scaled_image, cv2.COLOR_RGB2BGR))
 
 if __name__ == "__main__":
 	main()

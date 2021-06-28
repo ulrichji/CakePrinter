@@ -51,8 +51,14 @@ class GraphToSequence:
 	def getSequences(self):
 		return getSequencesFromGraph(self.graph_provider.getGraph())
 
+import sys
 def main():
-	file_image = image_file_loader.ImageFileLoader("examples/obama.jpg")
+	if len(sys.argv) <= 1:
+		print('Usage: python {} <file to load>'.format(sys.argv[0]))
+		return
+
+	file_path = sys.argv[1]
+	file_image = image_file_loader.ImageFileLoader(file_path)
 	scale_image = image_scaler.ImageScaler(file_image, (4000,4000))
 	gray_image = image_simple_grayscaler.ImageSimpleGrayscaler(scale_image)
 	binarized_image = image_canny_binarizer.ImageCannyBinarizer(gray_image, 100, 125, 3)
@@ -60,6 +66,10 @@ def main():
 	neighbourhood_graph = graph_image_neighbourhood.GraphImageNeighbourhood(binarized_image)
 	sections_data = GraphToSequence(neighbourhood_graph)
 	sections = sections_data.getSequences()
+
+	print('Created a sequence of {} sections'.format(len(sections)))
+	print('The following list contains the lengths of the sections:')
+	print(' ' + '\n '.join(str(i) + ': ' + str(len(s)) for i,s in enumerate(sections)))
 	
 if __name__ == "__main__":
 	main()

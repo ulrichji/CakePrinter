@@ -147,11 +147,17 @@ def savePositions(file_path, positions_list):
 	
 	f.close()
 
+import sys
 def main():
-	file_image = image_file_loader.ImageFileLoader("examples/zivid.png")
+	if len(sys.argv) <= 2:
+		print('Usage: python {} <input image> <output position trajectory>'.format(sys.argv[0]))
+		return
+
+	input_image_path = sys.argv[1]
+	file_image = image_file_loader.ImageFileLoader(input_image_path)
 	scale_image = image_scaler.ImageScaler(file_image, (4600,4600))
 	gray_image = image_simple_grayscaler.ImageSimpleGrayscaler(scale_image)
-	binarized_image = image_canny_binarizer.ImageCannyBinarizer(gray_image, 100, 125, 3)
+	binarized_image = image_canny_binarizer.ImageCannyBinarizer(gray_image, 100, 200, 5)
 	
 	neighbourhood_graph = graph_image_neighbourhood.GraphImageNeighbourhood(binarized_image)
 	sections_data = graph_to_sequence.GraphToSequence(neighbourhood_graph)
@@ -163,7 +169,8 @@ def main():
 		positions = getPositionsFromTrajectory(trajectory)
 		positions_list.append(positions)
 	
-	savePositions("zivid_pos_trajectory.txt", positions_list)
+	output_positional_trajectory_path = sys.argv[2]
+	savePositions(output_positional_trajectory_path, positions_list)
 
 if __name__ == "__main__":
 	main()

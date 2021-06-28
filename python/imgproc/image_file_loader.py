@@ -11,8 +11,14 @@ class ImageFileLoader(image_provider.ImageProvider):
 		numpy_image = numpy.array(img)
 		return numpy_image
 
+import sys
 def main():
-	image_loader = ImageFileLoader('examples/obama.jpg')
+	if len(sys.argv) <= 1:
+		print('Usage: python {} <file to load>'.format(sys.argv[0]))
+		return
+
+	image_path = sys.argv[1]
+	image_loader = ImageFileLoader(image_path)
 	image = image_loader.getImage()
 	
 	print("Loaded image with shape:",str(image.shape))

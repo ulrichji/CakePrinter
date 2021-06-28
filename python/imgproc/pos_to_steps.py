@@ -118,10 +118,16 @@ def getStepsFromPosTrajectory(pos_trajectory):
 
 	return step_trajectory
 
+import sys
 def main():
+	if len(sys.argv) <= 2:
+		print('Usage: python {} <input position trajectory> <output stepfile>'.format(sys.argv[0]))
+		return
+
 	pos_trajectories = []
 	
-	f = open("zivid_pos_trajectory.txt", "r")
+	input_position_trajectory_path = sys.argv[1]
+	f = open(input_position_trajectory_path, "r")
 	
 	prev_x = 0
 	prev_y = 0
@@ -162,9 +168,10 @@ def main():
 	full_trajectory = fillTrajectories(pos_trajectories)
 	steps = getStepsFromPosTrajectory(full_trajectory)
 
-	test_stepfile = open("zivid_stepfile.txt", "w")
+	output_stepfile = sys.argv[2]
+	test_stepfile = open(output_stepfile, "w")
 	
-	test_stepfile.write(','.join(["(" + str(step[0]) + "," + str(step[1]) + "," + str(step[2]) + ")" for step in steps]))
+	test_stepfile.write(','.join("(" + str(step[0]) + "," + str(step[1]) + "," + str(step[2]) + ")" for step in steps))
 	
 	test_stepfile.close()
 
