@@ -110,16 +110,23 @@ def stepToText(step):
 	
 	return '(' + str(x_text) + ',' + str(y_text) + ',' + str(draw_text) + ')'
 
+import sys
 def main():
-	smoothed_step_file = open("zivid_stepfile_smooth.txt", "w")
-	file_data_provider = step_file_data_provider.StepFileDataProvider("zivid_stepfile.txt")
+	if len(sys.argv) <= 2:
+		print('Usage: python {} step_smoother.py <input_stepfile> <output_stepfile>'.format(sys.argv[0]))
+		return
+
+	input_step_file_path = sys.argv[1]
+	file_data_provider = step_file_data_provider.StepFileDataProvider(input_step_file_path)
 	smoothed_data_provider = SmoothedStepDataProvider(file_data_provider)
+
+	output_step_file_path = sys.argv[2]
+	smoothed_step_file = open(output_step_file_path, "w")
 	while(smoothed_data_provider.hasData()):
 		step = smoothed_data_provider.getStep()
 		smoothed_step_file.write(stepToText(step))
 		if(smoothed_data_provider.hasData()):
 			smoothed_step_file.write(',')
-	
-	
+
 if __name__ == "__main__":
 	main()

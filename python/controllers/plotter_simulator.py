@@ -10,12 +10,12 @@ import step_file_data_provider
 import math
 
 class PlotterSimulator:
-	def __init__(self, step_time, phys_time, save_image=False, save_stats=True):
+	def __init__(self, step_time, phys_time, image_output_dir=None, save_stats=True):
 		self.image_time_step = 1 / 60
 		self.image_size = (600,600)
 		self.image_scale = 100
 		self.image_center_offset = (0,0)
-		self.save_image = save_image
+		self.image_output_dir = image_output_dir
 		self.drawn_image = None
 		
 		self.step_time = step_time
@@ -100,13 +100,9 @@ class PlotterSimulator:
 			self.image_count = this_state['image_count']
 	
 	def saveImage(self, draw=False):
-		if(self.drawn_image is None):
+		if(self.drawn_image is None and self.image_output_dir):
 			self.drawn_image = PIL.Image.new("RGBA", self.image_size)
-		while(self.current_phys_time > self.current_image_time and self.save_image):
-			
-			file_name = "frames/%05d.png"%(self.image_count)
-			print("Saving image "+str(file_name))
-			
+		while(self.current_phys_time > self.current_image_time and self.image_output_dir):
 			effector_draw_x = (self.effector_pos[0] * self.image_scale) + self.image_center_offset[0]
 			effector_draw_y = (self.effector_pos[1] * self.image_scale) + self.image_center_offset[1]
 			logical_draw_x = (self.logical_pos[0] * self.image_scale) + self.image_center_offset[0]
@@ -126,6 +122,9 @@ class PlotterSimulator:
 			drawer.text((0,0),"%.5f"%(self.current_image_time), fill=(255,255,255,255))
 			del drawer
 			
+			slash = '' if self.image_output_dir.endswith('/') else '/'
+			file_name = self.image_output_dir + slash + "%05d.png"%(self.image_count)
+			print("Saving image "+str(file_name))
 			img.save(file_name, "PNG")
 			
 			self.current_image_time += self.image_time_step
@@ -185,13 +184,13 @@ class PlotterSimulator:
 		self.step_count += 1
 
 class PlotterSimulatorController(plotter_controller.PlotterController):
-	def __init__(self, step_data, step_time=0.001, buffer_size=1024, save_images=False):
+	def __init__(self, step_data, step_time=0.001, buffer_size=1024, image_output_dir=None):
 		super(PlotterSimulatorController, self).__init__(step_data, step_time)
 		
 		self.effector_pos = (0,0)
 		self.stepper_thread = None
 		self.data_thread = None
-		self.simulator = PlotterSimulator(step_time, step_time / 10, save_image=save_images)
+		self.simulator = PlotterSimulator(step_time, step_time / 10, image_output_dir=image_output_dir)
 		
 		self.buffer_size = buffer_size
 		self.load_buffer = []
@@ -259,19 +258,24 @@ class RandomDataProvider(plotter_controller.StepDataProvider):
 			x_step = random.choice(list(plotter_controller.StepDirection))
 			y_step = random.choice(list(plotter_controller.StepDirection))
 			self.data_left -= 1
-			return plotter_controller.PlotterStep(x_step, y_step)
+			return plotter_controller.PlotterStep(x_step, y_step, draw_value=1)
 	
 	def hasData(self):
 		return self.data_left > 0
 
+import argparse
 def main():
-	data_provider = None
-	if(len(sys.argv) > 1):
-		data_provider = step_file_data_provider.StepFileDataProvider(sys.argv[1])
-	else:
-		data_provider = RandomDataProvider(number_of_data=10000)
+	parser = argparse.ArgumentParser(description='Run a plotter simulator to show trajectory of a stepfile')
+	parser.add_argument('--stepfile', type=str, help="The serial port to use.")
+	parser.add_argument('--image-output-dir', type=str, help="A list of files to send to the plotter")
 	
-	controller = PlotterSimulatorController(data_provider, save_images=True)
+	args = parser.parse_args()
+
+	data_provider = step_file_data_provider.StepFileDataProvider(args.stepfile) if args.stepfile else RandomDataProvider(number_of_data=10000)
+	
+	image_output_dir = args.image_output_dir
+
+	controller = PlotterSimulatorController(data_provider, image_output_dir=image_output_dir)
 	controller.start()
 	
 	controller.wait()
